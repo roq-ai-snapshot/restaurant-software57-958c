@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model communication {
+  id                                   String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sender_id                            String @db.Uuid
+  receiver_id                          String @db.Uuid
+  message                              String @db.VarChar(255)
+  user_communication_receiver_idTouser user   @relation("communication_receiver_idTouser", fields: [receiver_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_communication_sender_idTouser   user   @relation("communication_sender_idTouser", fields: [sender_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model feedback {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id   String     @db.Uuid
+  restaurant_id String     @db.Uuid
+  rating        Int
+  review        String?    @db.VarChar(255)
+  user          user       @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  restaurant    restaurant @relation(fields: [restaurant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model menu {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurant_id String      @db.Uuid
+  restaurant    restaurant  @relation(fields: [restaurant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  menu_item     menu_item[]
+}
+
+model menu_item {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String       @db.VarChar(255)
+  description String?      @db.VarChar(255)
+  price       Int
+  image_url   String?      @db.VarChar(255)
+  menu_id     String       @db.Uuid
+  menu        menu         @relation(fields: [menu_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order_item  order_item[]
+}
+
+model order {
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id   String       @db.Uuid
+  restaurant_id String       @db.Uuid
+  user          user         @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  restaurant    restaurant   @relation(fields: [restaurant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order_item    order_item[]
+}
+
+model order_item {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id     String    @db.Uuid
+  menu_item_id String    @db.Uuid
+  menu_item    menu_item @relation(fields: [menu_item_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order        order     @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model reservation {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id   String     @db.Uuid
+  restaurant_id String     @db.Uuid
+  date          DateTime   @db.Timestamp(6)
+  time          DateTime   @db.Timestamp(6)
+  party_size    Int
+  user          user       @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  restaurant    restaurant @relation(fields: [restaurant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model restaurant {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String        @db.VarChar(255)
+  owner_id    String        @db.Uuid
+  feedback    feedback[]
+  menu        menu[]
+  order       order[]
+  reservation reservation[]
+  user        user          @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user {
+  id                                            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roq_user_id                                   String?         @db.VarChar(255)
+  tenant_id                                     String?         @db.VarChar(255)
+  communication_communication_receiver_idTouser communication[] @relation("communication_receiver_idTouser")
+  communication_communication_sender_idTouser   communication[] @relation("communication_sender_idTouser")
+  feedback                                      feedback[]
+  order                                         order[]
+  reservation                                   reservation[]
+  restaurant                                    restaurant[]
+}
